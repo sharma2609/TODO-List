@@ -1,27 +1,24 @@
-import React from "react";
+import React, { useMemo } from "react";
 import TodoItem from "./TodoItem";
 import "./TodoList.css";
 
-const TodoList = ({ todos, onToggleTodo, onDeleteTodo, filter }) => {
-  if (todos.length === 0) {
-    return null;
-  }
+const TodoList = React.memo(({ todos, onToggleTodo, onDeleteTodo, filter }) => {
+  const sortedTodos = useMemo(() => {
+    return [...todos].sort((a, b) => {
+      // First sort by urgency (urgent tasks first)
+      if (a.isUrgent && !b.isUrgent) return -1;
+      if (!a.isUrgent && b.isUrgent) return 1;
 
-  // Sort todos: urgent first, then by completion status, then by creation date
-  const sortedTodos = [...todos].sort((a, b) => {
-    // First sort by urgency (urgent tasks first)
-    if (a.isUrgent && !b.isUrgent) return -1;
-    if (!a.isUrgent && b.isUrgent) return 1;
+      // Then by completion status (incomplete first)
+      if (!a.completed && b.completed) return -1;
+      if (a.completed && !b.completed) return 1;
 
-    // Then by completion status (incomplete first)
-    if (!a.completed && b.completed) return -1;
-    if (a.completed && !b.completed) return 1;
+      // Finally by creation date (newest first)
+      return new Date(b.createdAt) - new Date(a.createdAt);
+    });
+  }, [todos]);
 
-    // Finally by creation date (newest first)
-    return new Date(b.createdAt) - new Date(a.createdAt);
-  });
-
-  const getFilterTitle = () => {
+  const filterTitle = useMemo(() => {
     switch (filter) {
       case "personal":
         return "Personal Tasks";
@@ -38,14 +35,18 @@ const TodoList = ({ todos, onToggleTodo, onDeleteTodo, filter }) => {
       default:
         return "All Tasks";
     }
-  };
+  }, [filter]);
+
+  if (todos.length === 0) {
+    return null;
+  }
 
   return (
     <div className="todo-list">
       <div className="list-header">
         <div className="list-title">
-          <h2>{getFilterTitle()}</h2>
-          <div className="title-underline"></div>
+          <h2>{filterTitle}</h2>
+          <div className="title-underline" aria-hidden="true"></div>
         </div>
         <div className="list-count">
           <span className="count-number">{todos.length}</span>
@@ -75,6 +76,8 @@ const TodoList = ({ todos, onToggleTodo, onDeleteTodo, filter }) => {
       </div>
     </div>
   );
-};
+});
+
+TodoList.displayName = "TodoList";
 
 export default TodoList;

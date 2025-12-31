@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import "./TodoItem.css";
 
-const TodoItem = ({ todo, onToggle, onDelete }) => {
+const TodoItem = React.memo(({ todo, onToggle, onDelete }) => {
   const [isDeleting, setIsDeleting] = useState(false);
   const [isNew, setIsNew] = useState(false);
 
@@ -16,7 +16,7 @@ const TodoItem = ({ todo, onToggle, onDelete }) => {
     }
   }, [todo.createdAt]);
 
-  const formatDate = (dateString) => {
+  const formatDate = useCallback((dateString) => {
     const date = new Date(dateString);
     const now = new Date();
     const diffInMinutes = Math.floor((now - date) / (1000 * 60));
@@ -34,25 +34,35 @@ const TodoItem = ({ todo, onToggle, onDelete }) => {
       month: "short",
       day: "numeric",
     });
-  };
+  }, []);
 
-  const handleDelete = () => {
+  const handleDelete = useCallback(() => {
     setIsDeleting(true);
     setTimeout(() => {
       onDelete();
     }, 200);
-  };
+  }, [onDelete]);
+
+  const handleToggle = useCallback(() => {
+    onToggle();
+  }, [onToggle]);
+
+  const itemClasses = [
+    "todo-item",
+    todo.completed && "completed",
+    todo.isUrgent && "urgent",
+    isDeleting && "deleting",
+    isNew && "new",
+  ]
+    .filter(Boolean)
+    .join(" ");
 
   return (
-    <div
-      className={`todo-item ${todo.completed ? "completed" : ""} ${
-        todo.isUrgent ? "urgent" : ""
-      } ${isDeleting ? "deleting" : ""} ${isNew ? "new" : ""}`}
-    >
+    <div className={itemClasses}>
       <div className="todo-content">
         <button
           className="toggle-button"
-          onClick={onToggle}
+          onClick={handleToggle}
           aria-label={
             todo.completed ? "Mark as incomplete" : "Mark as complete"
           }
@@ -60,7 +70,12 @@ const TodoItem = ({ todo, onToggle, onDelete }) => {
           <div className={`checkbox ${todo.completed ? "checked" : ""}`}>
             <div className="checkbox-inner">
               {todo.completed && (
-                <svg className="checkmark" viewBox="0 0 12 12" fill="none">
+                <svg
+                  className="checkmark"
+                  viewBox="0 0 12 12"
+                  fill="none"
+                  aria-hidden="true"
+                >
                   <path
                     d="M2 6L5 9L10 3"
                     stroke="currentColor"
@@ -78,15 +93,15 @@ const TodoItem = ({ todo, onToggle, onDelete }) => {
           <div className="todo-text-container">
             <span className="todo-text">{todo.text}</span>
             {todo.isUrgent && (
-              <div className="urgent-indicator">
-                <div className="urgent-pulse"></div>
+              <div className="urgent-indicator" aria-label="Urgent task">
+                <div className="urgent-pulse" aria-hidden="true"></div>
               </div>
             )}
           </div>
 
           <div className="todo-meta">
             <span className={`category-badge ${todo.category}`}>
-              <div className="category-dot"></div>
+              <div className="category-dot" aria-hidden="true"></div>
               {todo.category}
             </span>
             <span className="date-badge">{formatDate(todo.createdAt)}</span>
@@ -99,13 +114,15 @@ const TodoItem = ({ todo, onToggle, onDelete }) => {
         onClick={handleDelete}
         aria-label="Delete task"
       >
-        <div className="delete-icon">
+        <div className="delete-icon" aria-hidden="true">
           <div className="delete-line"></div>
           <div className="delete-line"></div>
         </div>
       </button>
     </div>
   );
-};
+});
+
+TodoItem.displayName = "TodoItem";
 
 export default TodoItem;

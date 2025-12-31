@@ -1,19 +1,37 @@
-import React, { useState } from "react";
+import React, { useState, useCallback } from "react";
 import "./TodoForm.css";
 
-const TodoForm = ({ onAddTodo }) => {
+const TodoForm = React.memo(({ onAddTodo }) => {
   const [text, setText] = useState("");
   const [category, setCategory] = useState("personal");
   const [isUrgent, setIsUrgent] = useState(false);
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    if (text.trim()) {
-      onAddTodo(text.trim(), category, isUrgent);
-      setText("");
-      setIsUrgent(false);
-    }
-  };
+  const handleSubmit = useCallback(
+    (e) => {
+      e.preventDefault();
+      const trimmedText = text.trim();
+      if (trimmedText) {
+        onAddTodo(trimmedText, category, isUrgent);
+        setText("");
+        setIsUrgent(false);
+      }
+    },
+    [text, category, isUrgent, onAddTodo]
+  );
+
+  const handleTextChange = useCallback((e) => {
+    setText(e.target.value);
+  }, []);
+
+  const handleCategoryChange = useCallback((newCategory) => {
+    setCategory(newCategory);
+  }, []);
+
+  const handleUrgencyToggle = useCallback(() => {
+    setIsUrgent((prev) => !prev);
+  }, []);
+
+  const categories = ["personal", "work", "others"];
 
   return (
     <div className="todo-form-container">
@@ -23,10 +41,11 @@ const TodoForm = ({ onAddTodo }) => {
             <input
               type="text"
               value={text}
-              onChange={(e) => setText(e.target.value)}
+              onChange={handleTextChange}
               placeholder="What needs to be done?"
               className="task-input"
               maxLength={120}
+              autoComplete="off"
             />
             <div className="input-border"></div>
           </div>
@@ -36,14 +55,14 @@ const TodoForm = ({ onAddTodo }) => {
           <div className="category-selector">
             <label className="control-label">Category</label>
             <div className="category-buttons">
-              {["personal", "work", "others"].map((cat) => (
+              {categories.map((cat) => (
                 <button
                   key={cat}
                   type="button"
                   className={`category-btn ${category === cat ? "active" : ""}`}
-                  onClick={() => setCategory(cat)}
+                  onClick={() => handleCategoryChange(cat)}
                 >
-                  <span className="category-icon"></span>
+                  <span className="category-icon" aria-hidden="true"></span>
                   {cat.charAt(0).toUpperCase() + cat.slice(1)}
                 </button>
               ))}
@@ -55,7 +74,8 @@ const TodoForm = ({ onAddTodo }) => {
             <button
               type="button"
               className={`urgency-toggle ${isUrgent ? "active" : ""}`}
-              onClick={() => setIsUrgent(!isUrgent)}
+              onClick={handleUrgencyToggle}
+              aria-pressed={isUrgent}
             >
               <div className="toggle-switch">
                 <div className="toggle-slider"></div>
@@ -75,14 +95,16 @@ const TodoForm = ({ onAddTodo }) => {
           <div className="button-content">
             <span className="button-text">Add Task</span>
             <div className="button-icon">
-              <div className="plus-icon"></div>
+              <div className="plus-icon" aria-hidden="true"></div>
             </div>
           </div>
-          <div className="button-ripple"></div>
+          <div className="button-ripple" aria-hidden="true"></div>
         </button>
       </form>
     </div>
   );
-};
+});
+
+TodoForm.displayName = "TodoForm";
 
 export default TodoForm;

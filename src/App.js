@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
 import "./App.css";
 import TodoForm from "./components/TodoForm";
 import TodoList from "./components/TodoList";
@@ -11,7 +11,12 @@ function App() {
   useEffect(() => {
     const savedTodos = localStorage.getItem("nothing-todos");
     if (savedTodos) {
-      setTodos(JSON.parse(savedTodos));
+      try {
+        setTodos(JSON.parse(savedTodos));
+      } catch (error) {
+        console.error("Failed to parse saved todos:", error);
+        localStorage.removeItem("nothing-todos");
+      }
     }
   }, []);
 
@@ -20,41 +25,44 @@ function App() {
     localStorage.setItem("nothing-todos", JSON.stringify(todos));
   }, [todos]);
 
-  const addTodo = (text, category = "personal", isUrgent = false) => {
-    const newTodo = {
-      id: Date.now(),
-      text,
-      category,
-      isUrgent,
-      completed: false,
-      createdAt: new Date().toISOString(),
-    };
-    setTodos([newTodo, ...todos]);
-  };
+  const addTodo = useCallback(
+    (text, category = "personal", isUrgent = false) => {
+      const newTodo = {
+        id: Date.now() + Math.random(), // More unique ID
+        text: text.trim(),
+        category,
+        isUrgent,
+        completed: false,
+        createdAt: new Date().toISOString(),
+      };
+      setTodos((prevTodos) => [newTodo, ...prevTodos]);
+    },
+    []
+  );
 
-  const toggleTodo = (id) => {
-    setTodos(
-      todos.map((todo) =>
+  const toggleTodo = useCallback((id) => {
+    setTodos((prevTodos) =>
+      prevTodos.map((todo) =>
         todo.id === id ? { ...todo, completed: !todo.completed } : todo
       )
     );
-  };
+  }, []);
 
-  const deleteTodo = (id) => {
-    setTodos(todos.filter((todo) => todo.id !== id));
-  };
+  const deleteTodo = useCallback((id) => {
+    setTodos((prevTodos) => prevTodos.filter((todo) => todo.id !== id));
+  }, []);
 
-  const clearCompleted = () => {
-    setTodos(todos.filter((todo) => !todo.completed));
-  };
+  const clearCompleted = useCallback(() => {
+    setTodos((prevTodos) => prevTodos.filter((todo) => !todo.completed));
+  }, []);
 
-  const clearAll = () => {
+  const clearAll = useCallback(() => {
     if (window.confirm("Clear all tasks?")) {
       setTodos([]);
     }
-  };
+  }, []);
 
-  const getFilteredTodos = () => {
+  const filteredTodos = useMemo(() => {
     switch (filter) {
       case "personal":
         return todos.filter((todo) => todo.category === "personal");
@@ -71,21 +79,24 @@ function App() {
       default:
         return todos;
     }
-  };
+  }, [todos, filter]);
 
-  const stats = {
-    total: todos.length,
-    completed: todos.filter((todo) => todo.completed).length,
-    urgent: todos.filter((todo) => todo.isUrgent && !todo.completed).length,
-    personal: todos.filter(
-      (todo) => todo.category === "personal" && !todo.completed
-    ).length,
-    work: todos.filter((todo) => todo.category === "work" && !todo.completed)
-      .length,
-    others: todos.filter(
-      (todo) => todo.category === "others" && !todo.completed
-    ).length,
-  };
+  const stats = useMemo(
+    () => ({
+      total: todos.length,
+      completed: todos.filter((todo) => todo.completed).length,
+      urgent: todos.filter((todo) => todo.isUrgent && !todo.completed).length,
+      personal: todos.filter(
+        (todo) => todo.category === "personal" && !todo.completed
+      ).length,
+      work: todos.filter((todo) => todo.category === "work" && !todo.completed)
+        .length,
+      others: todos.filter(
+        (todo) => todo.category === "others" && !todo.completed
+      ).length,
+    }),
+    [todos]
+  );
 
   return (
     <div className="app">
@@ -94,7 +105,7 @@ function App() {
         <div className="left-panel">
           <header className="header">
             <div className="logo">
-              <div className="dot"></div>
+              <div className="dot" aria-hidden="true"></div>
               <h1>Tasks</h1>
             </div>
             <p className="subtitle">Nothing but productivity</p>
@@ -205,17 +216,17 @@ function App() {
           </div>
 
           <TodoList
-            todos={getFilteredTodos()}
+            todos={filteredTodos}
             onToggleTodo={toggleTodo}
             onDeleteTodo={deleteTodo}
             filter={filter}
           />
 
-          {getFilteredTodos().length === 0 && todos.length > 0 && (
+          {filteredTodos.length === 0 && todos.length > 0 && (
             <div className="empty-state">
               <div className="empty-animation">
-                <div className="empty-dot"></div>
-                <div className="empty-rings">
+                <div className="empty-dot" aria-hidden="true"></div>
+                <div className="empty-rings" aria-hidden="true">
                   <div className="ring"></div>
                   <div className="ring"></div>
                 </div>
@@ -228,8 +239,8 @@ function App() {
           {todos.length === 0 && (
             <div className="empty-state">
               <div className="empty-animation">
-                <div className="empty-dot"></div>
-                <div className="empty-rings">
+                <div className="empty-dot" aria-hidden="true"></div>
+                <div className="empty-rings" aria-hidden="true">
                   <div className="ring"></div>
                   <div className="ring"></div>
                 </div>
