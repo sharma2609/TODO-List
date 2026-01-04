@@ -9,9 +9,8 @@ const TodoForm = React.memo(({ onAddTodo }) => {
   const handleSubmit = useCallback(
     (e) => {
       e.preventDefault();
-      const trimmedText = text.trim();
-      if (trimmedText) {
-        onAddTodo(trimmedText, category, isUrgent);
+      if (text.trim()) {
+        onAddTodo(text.trim(), category, isUrgent);
         setText("");
         setIsUrgent(false);
       }

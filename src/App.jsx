@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import "./App.css";
 import TodoForm from "./components/TodoForm.jsx";
 import TodoList from "./components/TodoList.jsx";
@@ -28,7 +28,7 @@ function App() {
   const addTodo = useCallback(
     (text, category = "personal", isUrgent = false) => {
       const newTodo = {
-        id: Date.now() + Math.random(), // More unique ID
+        id: crypto.randomUUID(), // Better unique ID generation
         text: text.trim(),
         category,
         isUrgent,

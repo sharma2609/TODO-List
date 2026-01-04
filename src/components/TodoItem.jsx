@@ -1,20 +1,8 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useCallback } from "react";
 import "./TodoItem.css";
 
 const TodoItem = React.memo(({ todo, onToggle, onDelete }) => {
   const [isDeleting, setIsDeleting] = useState(false);
-  const [isNew, setIsNew] = useState(false);
-
-  useEffect(() => {
-    // Check if this is a new item (created within last 100ms)
-    const now = new Date().getTime();
-    const created = new Date(todo.createdAt).getTime();
-    if (now - created < 100) {
-      setIsNew(true);
-      const timer = setTimeout(() => setIsNew(false), 300);
-      return () => clearTimeout(timer);
-    }
-  }, [todo.createdAt]);
 
   const formatDate = useCallback((dateString) => {
     const date = new Date(dateString);
@@ -52,7 +40,6 @@ const TodoItem = React.memo(({ todo, onToggle, onDelete }) => {
     todo.completed && "completed",
     todo.isUrgent && "urgent",
     isDeleting && "deleting",
-    isNew && "new",
   ]
     .filter(Boolean)
     .join(" ");
